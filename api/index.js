@@ -22,6 +22,14 @@ db.connect((err) => {
   console.log('Connected to database.');
 });
 
+
+// Allow requests from the frontend
+app.use(cors({
+  origin: 'http://localhost:5001', // Replace with your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true, // Include cookies or authentication headers if needed
+}));
+
 app.get('/api/data', (req, res) => {
   db.query('SELECT * FROM your_table', (err, results) => {
     if (err) {
@@ -39,7 +47,7 @@ app.get('*', (req, res) => {
 });
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -5,10 +5,16 @@ import { useEffect } from 'react';
 function App() {
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/data')
-      .then((res) => res.json())
-      .then((data) => console.log(data))
-      .catch((err) => console.error(err));
+    fetch('http://localhost:5001/api/data')
+      .then((res) => {
+        console.log('Response:', res);
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => console.log('Data:', data))
+      .catch((err) => console.error('Fetch error:', err));
   }, []);
 
   return (
