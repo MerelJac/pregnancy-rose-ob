@@ -6,6 +6,12 @@
 .pnp.js
 .package-lock.json
 .env
+api/node_modules
+api/node_modules
+api/pnp
+/api/pnp.js
+/api/package-lock.json
+/api/env
 # testing
 /coverage
 
