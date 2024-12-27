@@ -52,11 +52,29 @@ db.connect((err) => {
     return;
   }
   console.log('Connected to database.');
+
+  // Create 'diet' table if it doesn't exist
+  const createDietTableQuery = `
+    CREATE TABLE IF NOT EXISTS diet (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      food_name VARCHAR(255) NOT NULL,
+      is_safe BOOLEAN NOT NULL,
+      cite_sources TEXT NULL
+    )
+  `;
+
+  db.query(createDietTableQuery, (err) => {
+    if (err) {
+      console.error('Error creating diet table:', err);
+    } else {
+      console.log('Diet table is ready.');
+    }
+  });
 });
 
 // API Endpoint
-app.get('/api/data', (req, res) => {
-  db.query('SELECT * FROM your_table', (err, results) => {
+app.get('/api/diet', (req, res) => {
+  db.query('SELECT * FROM diet', (err, results) => {
     if (err) {
       res.status(500).send(err);
     } else {
