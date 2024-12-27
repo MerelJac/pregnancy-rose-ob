@@ -2,25 +2,49 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: 'http://localhost:5001', // Adjust this to match your frontend's URL
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://your-heroku-app.herokuapp.com' 
+    : 'http://localhost:3000', // Frontend URL for development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
-}));
+};
+app.use(cors(corsOptions));
+
+// Middleware
 app.use(express.json());
 
-// MySQL Database Connection
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+// Database Configuration
+const getDbConfig = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // Parse JawsDB URL
+    const url = new URL(process.env.JAWSDB_URL);
+    return {
+      host: url.hostname,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.replace('/', ''), // Remove leading "/"
+    };
+  } else {
+    // Use local `.env` variables
+    return {
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    };
+  }
+};
+
+const db = mysql.createConnection(getDbConfig());
 
 db.connect((err) => {
   if (err) {
