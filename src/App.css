@@ -14,7 +14,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: #DCA1A1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -25,8 +25,42 @@
 }
 
 .App-link {
-  color: #61dafb;
+  color: black;
+  text-decoration: none;
+
 }
+
+/* Footer styles */
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #333;
+  color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+  z-index: 1000;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.footer-section {
+  flex: 1;
+  text-align: center;
+}
+
+.footer-link {
+  text-decoration: none;
+  color: white;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #ff9800;
+}
+
 
 @keyframes App-logo-spin {
   from {
