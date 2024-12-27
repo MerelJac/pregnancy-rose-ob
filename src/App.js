@@ -5,7 +5,8 @@ import { useEffect } from 'react';
 function App() {
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/data')
+    // fetch('http://localhost:5001/api/data')
+    fetch('https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/data')
       .then((res) => {
         console.log('Response:', res);
         if (!res.ok) {
