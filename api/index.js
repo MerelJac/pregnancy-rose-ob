@@ -15,13 +15,13 @@ const app = express();
 // CORS Configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? 'https://your-heroku-app.herokuapp.com' 
-    : 'http://localhost:3000', // Frontend URL for development
+    ? 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com' 
+    : 'http://localhost:5001', // Frontend URL for development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 };
 app.use(cors(corsOptions));
-
+console.log('Database: ', process.env.DB_NAME);
 // Middleware
 app.use(express.json());
 
@@ -31,9 +31,11 @@ const db = mysql.createConnection(getDbConfig());
 db.connect((err) => {
   if (err) {
     console.error('Database connection failed:', err.stack);
+
     return;
   }
   console.log('Connected to database.');
+
 
   // Create 'diet' table if it doesn't exist
   const createDietTableQuery = `
@@ -55,22 +57,25 @@ db.connect((err) => {
 });
 
 // API Endpoint
+// API Routes
 app.get('/api/diet', (req, res) => {
+  console.log('GET /api/diet hit');
   db.query('SELECT * FROM diet', (err, results) => {
     if (err) {
-      res.status(500).send(err);
+      res.status(500).send(err); // Send error if query fails
     } else {
-      res.json(results);
+      res.json(results); // Send query results as JSON
     }
   });
 });
 
-// Serve React App
+// Serve React App (must be after API routes)
 app.use(express.static(path.join(__dirname, '../src/build')));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../src/build', 'index.html'));
 });
+
 
 // Start Server
 const PORT = process.env.PORT || 5001;

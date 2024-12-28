@@ -1,5 +1,5 @@
-const mysql = require('mysql');
-const { getDbConfig } = require('./dbConfig'); // Import DB configuration logic
+const mysql = require('mysql2');
+const { getDbConfig } = require('./dbConfig');
 
 // Database Connection
 const db = mysql.createConnection(getDbConfig());
@@ -24,40 +24,46 @@ const seedFoods = [
 
 // Function to seed the database and prevent duplicates
 const seedDatabase = () => {
-  db.query('SELECT COUNT(*) AS count FROM diet', (err, results) => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS diet (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      food_name VARCHAR(255) NOT NULL,
+      is_safe BOOLEAN NOT NULL,
+      cite_sources TEXT
+    );
+  `;
+
+  db.query(createTableQuery, (err) => {
     if (err) {
-      console.error('Error checking diet table count:', err);
+      console.error('Error creating diet table:', err);
       db.end();
-      return;
+      process.exit(1);
     }
-    const count = results[0].count;
-    if (count > 0) {
-      console.log('Diet table already seeded. Skipping seeding.');
-      db.end();
-    } else {
-      const seedQuery = `
-        INSERT INTO diet (food_name, is_safe, cite_sources)
-        VALUES ?
-      `;
+    console.log('Diet table created or already exists.');
 
-      const values = seedFoods.map((food) => [
-        food.food_name,
-        food.is_safe,
-        food.cite_sources,
-      ]);
+    // Insert seed data
+    const insertQuery = `
+      INSERT INTO diet (food_name, is_safe, cite_sources)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE food_name=VALUES(food_name);
+    `;
 
-      db.query(seedQuery, [values], (err) => {
+    seedFoods.forEach((food) => {
+      db.query(insertQuery, [food.food_name, food.is_safe, food.cite_sources], (err) => {
         if (err) {
-          console.error('Error seeding diet table:', err);
+          console.error('Error inserting seed data:', err);
         } else {
-          console.log('Diet table seeded successfully!');
+          console.log(`Seeded food: ${food.food_name}`);
         }
-        db.end();
       });
-    }
+    });
+
+    // Close connection
+    db.end(() => {
+      console.log('Database connection closed.');
+    });
   });
 };
-
 
 // Seed the database
 seedDatabase();
