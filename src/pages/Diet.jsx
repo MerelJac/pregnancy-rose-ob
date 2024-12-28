@@ -109,16 +109,19 @@ export default function Diet() {
       {/* Food Results */}
       <div>
         {filteredFoods.length > 0 ? (
-          <ul>
+          <ul className='left-aligned'>
             {filteredFoods.map((food) => (
-              <li key={food.id}>
+              <li
+                className="list-style"
+                key={food.id}
+                style={{ color: food.is_safe ? "green" : "red" }}
+              >
                 <input
                   type="checkbox"
                   onChange={() => toggleFoodSelection(food)}
                   checked={selectedFoods.includes(food)}
                 />
-                {food.food_name} -{' '}
-                {food.is_safe ? 'Pregnancy Safe' : 'Not Safe'}
+                {food.food_name} - {food.is_safe ? "Pregnancy Safe" : "Not Safe"}
               </li>
             ))}
           </ul>
