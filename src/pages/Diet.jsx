@@ -8,17 +8,21 @@ export default function Diet() {
   const [recipes, setRecipes] = useState([]); // Saved recipes
 
   useEffect(() => {
-    // Fetch foods data on component mount
     fetch('http://localhost:5001/api/diet')
-    .then((res) => res.json())
-    .then((data) => {
-      console.log('Fetched data:', data);
-      setFoods(data);
-      setFilteredFoods(data);
-    })
-    .catch((err) => console.error('Fetch error:', err));
-  
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log('Fetched data:', data);
+        setFoods(data); // Save fetched foods
+        setFilteredFoods(data); // Initialize filtered foods
+      })
+      .catch((err) => console.error('Fetch error:', err));
   }, []);
+  
   
 
   const handleSearch = (event) => {

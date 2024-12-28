@@ -16,12 +16,12 @@ const app = express();
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com' 
-    : 'http://localhost:5001', // Frontend URL for development
+    : 'http://localhost:3000', // Frontend URL for development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 };
+// CORS middleware must be applied first
 app.use(cors(corsOptions));
-console.log('Database: ', process.env.DB_NAME);
 // Middleware
 app.use(express.json());
 
@@ -56,7 +56,6 @@ db.connect((err) => {
   });
 });
 
-// API Endpoint
 // API Routes
 app.get('/api/diet', (req, res) => {
   console.log('GET /api/diet hit');
