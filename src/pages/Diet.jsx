@@ -41,14 +41,41 @@ export default function Diet() {
     }
   };
 
-  const generateRecipe = () => {
+  
+  const generateRecipe = async () => {
     const safeFoods = selectedFoods.filter((food) => food.is_safe);
     if (safeFoods.length === 0) {
-      alert('No pregnancy-safe foods selected!');
+      alert("No pregnancy-safe foods selected!");
       return;
     }
-    const newRecipe = { id: Date.now(), items: safeFoods };
-    setRecipes([...recipes, newRecipe]);
+  
+    const ingredients = safeFoods.map((food) => food.food_name);
+  
+    try {
+      const response = await fetch("http://localhost:5001/api/generate-recipe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ingredients }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        const newRecipe = {
+          id: Date.now(),
+          items: safeFoods,
+          instructions: data.recipe,
+        };
+  
+        setRecipes([...recipes, newRecipe]);
+      } else {
+        alert(data.error || "Failed to generate recipe.");
+      }
+    } catch (error) {
+      console.error("Error generating recipe:", error);
+    }
   };
 
   const saveRecipe = (recipe) => {

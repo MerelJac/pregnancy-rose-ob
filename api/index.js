@@ -2,15 +2,16 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const path = require('path');
-const { getDbConfig } = require('./dbConfig');
+const { generateCompletion } = require("./openai");
 
+
+
+const { getDbConfig } = require('./dbConfig');
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
 
 const app = express();
-
-
 
 // CORS Configuration
 const corsOptions = {
@@ -66,6 +67,18 @@ app.get('/api/diet', (req, res) => {
       res.json(results); // Send query results as JSON
     }
   });
+});
+
+// Recipe generation route
+app.post("/api/generate-recipe", async (req, res) => {
+  const { ingredients } = req.body;
+
+  try {
+    const recipe = await generateCompletion(ingredients);
+    res.json({ success: true, recipe });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Serve React App (must be after API routes)
