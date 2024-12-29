@@ -18,7 +18,7 @@ export default function Diet() {
   useEffect(() => {
     const baseUrl = env
     ? 'http://localhost:5001/api/diet' // Development URL
-    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/'; // Production URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
 
   fetch(baseUrl)
       .then((res) => {
@@ -65,7 +65,7 @@ export default function Diet() {
   
     const baseUrl = env
     ? 'http://localhost:5001/api/diet' // Development URL
-    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/'; // Production URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
 
 
     try {
