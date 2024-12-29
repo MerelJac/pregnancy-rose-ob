@@ -65,8 +65,11 @@
 
 .list-style {
   list-style: none;
+  text-align: start;
 }
-
+.no-link {
+  text-decoration: none;
+}
 .left-aligned {
   display: flex;
   align-items: start;

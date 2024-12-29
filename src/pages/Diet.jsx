@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import isDevelopmentEnv from '../functions/getUrl';
 
 export default function Diet() {
   const [foods, setFoods] = useState([]); // All foods
@@ -6,9 +7,20 @@ export default function Diet() {
   const [filteredFoods, setFilteredFoods] = useState([]); // Filtered foods
   const [selectedFoods, setSelectedFoods] = useState([]); // Foods selected for recipe
   const [recipes, setRecipes] = useState([]); // Saved recipes
+  const [env, setEnv] = useState(false); // Tracks if in development environment
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/diet')
+    const isDev = isDevelopmentEnv(); // Call the function
+    setEnv(isDev); // Set the environment state
+
+  }, []); // Only runs on component mount
+
+  useEffect(() => {
+    const baseUrl = env
+    ? 'http://localhost:5001/api/diet' // Development URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/'; // Production URL
+
+  fetch(baseUrl)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! Status: ${res.status}`);
@@ -21,7 +33,7 @@ export default function Diet() {
         setFilteredFoods(data); // Initialize filtered foods
       })
       .catch((err) => console.error('Fetch error:', err));
-  }, []);
+  }, [env]);
   
   
 
@@ -51,8 +63,13 @@ export default function Diet() {
   
     const ingredients = safeFoods.map((food) => food.food_name);
   
+    const baseUrl = env
+    ? 'http://localhost:5001/api/diet' // Development URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/'; // Production URL
+
+
     try {
-      const response = await fetch("http://localhost:5001/api/generate-recipe", {
+      const response = await fetch(baseUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,14 +131,16 @@ export default function Diet() {
               <li
                 className="list-style"
                 key={food.id}
-                style={{ color: food.is_safe ? "green" : "red" }}
               >
                 <input
                   type="checkbox"
                   onChange={() => toggleFoodSelection(food)}
                   checked={selectedFoods.includes(food)}
                 />
-                {food.food_name} - {food.is_safe ? "Pregnancy Safe" : "Not Safe"}
+                <a className='no-link' href={food.cite_sources} target='_blank' alt='Cite Sources Link' rel="noreferrer"
+                style={{ color: food.is_safe ? "green" : "red" }}>
+                  {food.food_name}
+                </a>
               </li>
             ))}
           </ul>

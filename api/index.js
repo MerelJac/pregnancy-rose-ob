@@ -69,6 +69,7 @@ app.get('/api/diet', (req, res) => {
   });
 });
 
+
 // Recipe generation route
 app.post("/api/generate-recipe", async (req, res) => {
   const { ingredients } = req.body;
