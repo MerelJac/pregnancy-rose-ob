@@ -69,6 +69,39 @@ app.get('/api/diet', (req, res) => {
   });
 });
 
+app.post('/api/diet', (req, res) => {
+  console.log('POST /api/diet hit');
+
+  const { food_name, is_safe, cite_sources } = req.body; // Destructure the request body
+
+  // Validate required fields
+  if (!food_name || is_safe === undefined) {
+    return res.status(400).send('Missing required fields: food_name or is_safe');
+  }
+
+  // SQL query to insert the new food item
+  const query = `
+    INSERT INTO diet (food_name, is_safe, cite_sources)
+    VALUES (?, ?, ?)
+  `;
+
+  // If cite_sources is not provided, insert NULL instead
+  const values = [food_name, is_safe, cite_sources || null];
+
+  // Execute the query
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Database insert error:', err);
+      return res.status(500).send('Failed to insert data into the database');
+    }
+
+    console.log('Food item added successfully:', results);
+
+    // Send the inserted food item back with its new ID
+    const newFood = { id: results.insertId, food_name, is_safe, cite_sources: cite_sources || null };
+    res.status(201).json(newFood);
+  });
+});
 
 // Recipe generation route
 app.post("/api/generate-recipe", async (req, res) => {
@@ -81,6 +114,25 @@ app.post("/api/generate-recipe", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+app.delete('/api/diet', (req, res) => {
+  const { ids } = req.body; // Array of IDs to delete
+  console.log('Ids for deleting: ', ids)
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).send('Invalid request body');
+  }
+
+  const query = 'DELETE FROM diet WHERE id IN (?)';
+  db.query(query, [ids], (err, results) => {
+    if (err) {
+      console.error('Database delete error:', err);
+      return res.status(500).send('Failed to delete items');
+    }
+
+    res.status(200).send({ deletedCount: results.affectedRows });
+  });
+});
+
 
 // Serve React App (must be after API routes)
 app.use(express.static(path.join(__dirname, '../src/build')));

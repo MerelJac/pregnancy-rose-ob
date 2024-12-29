@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: 'My API Key',
 });
 
 console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
@@ -28,7 +28,8 @@ const generateCompletion = async (ingredients) => {
     ],
     max_tokens: 150, // Adjust as needed
   });
-
+  
+  
 
   return completion.choices[0].message.content.trim();
 };

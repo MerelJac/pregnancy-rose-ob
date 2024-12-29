@@ -3,6 +3,8 @@ import isDevelopmentEnv from '../functions/getUrl';
 
 export default function Diet() {
   const [foods, setFoods] = useState([]); // All foods
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [newFood, setNewFood] = useState({ food_name: '', is_safe: true, cite_sources: '' }); // Form state
   const [searchTerm, setSearchTerm] = useState(''); // Search term
   const [filteredFoods, setFilteredFoods] = useState([]); // Filtered foods
   const [selectedFoods, setSelectedFoods] = useState([]); // Foods selected for recipe
@@ -53,6 +55,52 @@ export default function Diet() {
     }
   };
 
+    // Handle delete action
+    const handleDelete = () => {
+      if (
+        window.confirm(
+          `Are you sure you want to delete ${selectedFoods.length} items?`
+        )
+      ) {
+        // Extract only the ids from the selectedFoods array
+        const idsForDeleting = selectedFoods.map((food) => food.id);
+    
+        console.log('Ids for deleting: ', idsForDeleting);
+    
+        const baseUrl = env
+          ? 'http://localhost:5001/api/diet' // Development URL
+          : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
+    
+        fetch(baseUrl, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: idsForDeleting }),
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then(() => {
+            // Re-fetch the updated list of foods after deletion
+            return fetch(baseUrl, { method: 'GET' });
+          })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error while refreshing! Status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            setFoods(data); // Reset the foods list
+            setFilteredFoods(data); // Reset the filtered foods list
+            setSelectedFoods([]); // Clear the selection
+          })
+          .catch((err) => console.error('Delete or refresh error:', err));
+      }
+    };
+    
   
   const generateRecipe = async () => {
     const safeFoods = selectedFoods.filter((food) => food.is_safe);
@@ -108,19 +156,58 @@ export default function Diet() {
     setRecipes(savedRecipes);
   }, []);
 
+    // Open modal
+    const openModal = () => setIsModalOpen(true);
+
+    // Close modal
+    const closeModal = () => {
+      setIsModalOpen(false);
+      setNewFood({ food_name: '', is_safe: true, cite_sources: '' }); // Reset form
+    };
+
+    // Handle form input change
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewFood((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    console.log('New Food: ', newFood);
+    e.preventDefault();
+    const baseUrl = env
+    ? 'http://localhost:5001/api/diet' // Development URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
+
+    fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newFood),
+    })
+      .then((res) => res.json())
+      .then((newItem) => {
+        setFoods((prev) => [...prev, newItem]); // Update UI with new item
+        closeModal(); // Close modal
+      })
+      .catch((err) => console.error('Post error:', err));
+  };
   return (
     <div>
       <h1>Diet Page</h1>
       <p>Search for foods you want to eat during pregnancy.</p>
 
       {/* Search Bar */}
-      <div>
+      <div className='flex-column'>
         <input
           type="text"
           placeholder="Search for foods..."
           value={searchTerm}
           onChange={handleSearch}
         />
+        <button onClick={openModal}>Add new food</button>
       </div>
 
       {/* Food Results */}
@@ -153,6 +240,13 @@ export default function Diet() {
       <div>
         <button onClick={generateRecipe}>Generate Recipe</button>
       </div>
+      {/* Delete Food Record */}
+      <button
+        onClick={handleDelete}
+        disabled={selectedFoods.length === 0} // Disable if no items selected
+      >
+        Delete Selected Items
+      </button>
 
       {/* Saved Recipes */}
       <div>
@@ -169,6 +263,82 @@ export default function Diet() {
           </div>
         ))}
       </div>
+      {/* Modal */}
+    {isModalOpen && (
+      <div className="modal">
+        <div className="modal-content">
+          <h2>Add New Food</h2>
+          <form onSubmit={handleSubmit}>
+            <div>
+              <label>
+                Food Name:
+                <input
+                  type="text"
+                  name="food_name"
+                  value={newFood.food_name}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+            </div>
+            <div>
+              <label>
+                Is Safe:
+                <input
+                  type="checkbox"
+                  name="is_safe"
+                  checked={newFood.is_safe}
+                  onChange={handleChange}
+                />
+              </label>
+            </div>
+            <div>
+              <label>
+                Source:
+                <input
+                  type="text"
+                  name="cite_sources"
+                  value={newFood.cite_sources}
+                  onChange={handleChange}
+                />
+              </label>
+            </div>
+            <button type="submit">Add Food</button>
+            <button type="button" onClick={closeModal}>
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* Modal Styles */}
+    <style>
+      {`
+        .modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .modal-content {
+          background: white;
+          padding: 20px;
+          border-radius: 5px;
+          max-width: 400px;
+          width: 100%;
+        }
+        form div {
+          margin-bottom: 10px;
+        }
+      `}
+    </style>
     </div>
+    
   );
 }
