@@ -46,6 +46,19 @@ const seedFoods = [
   { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
+const updateTableSchema = `
+  ALTER TABLE diet ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'admin1234';
+`;
+
+db.query(updateTableSchema, (err) => {
+  if (err) {
+    console.error('Error updating table schema:', err);
+    process.exit(1);
+  }
+  console.log('Table schema updated.');
+});
+
+
 // Function to seed the database and prevent duplicates
 const seedDatabase = () => {
   const createTableQuery = `
