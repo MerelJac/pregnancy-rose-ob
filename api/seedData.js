@@ -48,7 +48,7 @@ const seedFoods = [
 
 const checkAndAddColumn = `
   ALTER TABLE diet 
-  ADD COLUMN user_id TEXT NOT NULL DEFAULT 'admin1234';
+  ADD COLUMN user_id TEXT NOT NULL;
 `;
 
 // Execute query
