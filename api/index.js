@@ -59,6 +59,7 @@ db.connect((err) => {
     const createRecipeTableQuery = `
       CREATE TABLE IF NOT EXISTS recipe (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NULL,
         ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
         instructions TEXT NULL,    -- Store recipe instructions
         user_id TEXT NOT NULL      -- Link to the user who created the recipe

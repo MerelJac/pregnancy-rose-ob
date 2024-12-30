@@ -48,8 +48,7 @@ const seedFoods = [
 
 // MIRGATION DATA
         const checkAndAddColumn = `
-          ALTER TABLE diet 
-          ADD COLUMN user_id TEXT NOT NULL;
+          ALTER TABLE recipe MODIFY COLUMN name VARCHAR(255) NULL;
         `;
 
         // Execute query
@@ -57,13 +56,13 @@ const seedFoods = [
           if (err) {
             // If the error code indicates the column already exists, log a message
             if (err.code === 'ER_DUP_FIELDNAME') {
-              console.log('Column "user_id" already exists in "diet" table.');
+              console.log('Column "name" already exists in "recipe" table.');
             } else {
-              console.error('Error adding column "user_id":', err);
+              console.error('Error adding column "name":', err);
               process.exit(1); // Exit on other errors
             }
           } else {
-            console.log('Column "user_id" successfully added.');
+            console.log('Column "name" successfully added.');
           }
         });
 
