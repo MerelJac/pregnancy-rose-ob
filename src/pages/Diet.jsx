@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import isDevelopmentEnv from '../functions/getUrl';
+import {getUserId } from '../functions/getUUID';
 
 export default function Diet() {
   const [foods, setFoods] = useState([]); // All foods
@@ -10,19 +11,28 @@ export default function Diet() {
   const [selectedFoods, setSelectedFoods] = useState([]); // Foods selected for recipe
   const [recipes, setRecipes] = useState([]); // Saved recipes
   const [env, setEnv] = useState(false); // Tracks if in development environment
+  const [userId, setUserId] = useState(''); // User ID
 
   useEffect(() => {
     const isDev = isDevelopmentEnv(); // Call the function
     setEnv(isDev); // Set the environment state
 
+    const id = getUserId(); // Fetch or generate userId
+    setUserId(id); // Save userId in state
+    console.log('User ID initialized:', id);
   }, []); // Only runs on component mount
 
   useEffect(() => {
     const baseUrl = env
-    ? 'http://localhost:5001/api/diet' // Development URL
-    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
+    ? 'http://localhost:5001/get/diet' // Development URL
+    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/get/diet'; // Production URL
+    const userIdPayload = { userId }; // Wrap userId in an object
 
-  fetch(baseUrl)
+    fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userIdPayload), // Pass userId as part of an object
+    })
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! Status: ${res.status}`);
@@ -35,10 +45,8 @@ export default function Diet() {
         setFilteredFoods(data); // Initialize filtered foods
       })
       .catch((err) => console.error('Fetch error:', err));
-  }, [env]);
+  }, [userId, env]);
   
-  
-
   const handleSearch = (event) => {
     const term = event.target.value.toLowerCase();
     setSearchTerm(term);
@@ -55,52 +63,52 @@ export default function Diet() {
     }
   };
 
-    // Handle delete action
-    const handleDelete = () => {
-      if (
-        window.confirm(
-          `Are you sure you want to delete ${selectedFoods.length} items?`
-        )
-      ) {
-        // Extract only the ids from the selectedFoods array
-        const idsForDeleting = selectedFoods.map((food) => food.id);
-    
-        console.log('Ids for deleting: ', idsForDeleting);
-    
-        const baseUrl = env
-          ? 'http://localhost:5001/api/diet' // Development URL
-          : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
-    
-        fetch(baseUrl, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: idsForDeleting }),
+  // Handle delete action
+  const handleDelete = () => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedFoods.length} items?`
+      )
+    ) {
+      const idsForDeleting = selectedFoods.map((food) => food.id);
+  
+      console.log('Ids for deleting: ', idsForDeleting, 'User: ', userId);
+  
+      const baseUrl = env
+        ? 'http://localhost:5001/api/diet'
+        : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet';
+  
+      fetch(baseUrl, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: idsForDeleting, userId }),
+      })
+        .then((res) => {
+          console.log('Delete response status:', res.status);
+          if (!res.ok) {
+            return res.json().then((error) => {
+              throw new Error(error.error || 'Unknown error occurred');
+            });
+          }
+          return res.json();
         })
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! Status: ${res.status}`);
-            }
-            return res.json();
-          })
-          .then(() => {
-            // Re-fetch the updated list of foods after deletion
-            return fetch(baseUrl, { method: 'GET' });
-          })
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error while refreshing! Status: ${res.status}`);
-            }
-            return res.json();
-          })
-          .then((data) => {
-            setFoods(data); // Reset the foods list
-            setFilteredFoods(data); // Reset the filtered foods list
-            setSelectedFoods([]); // Clear the selection
-          })
-          .catch((err) => console.error('Delete or refresh error:', err));
-      }
-    };
-    
+        .then((data) => {
+          console.log('Delete response data:', data);
+  
+          const updatedFoods = foods.filter(
+            (food) => !idsForDeleting.includes(food.id)
+          );
+          setFoods(updatedFoods); // Reset the foods list
+          setFilteredFoods(updatedFoods); // Reset the filtered foods list
+          setSelectedFoods([]); // Clear the selection
+        })
+        .catch((err) => {
+          console.error('Delete or refresh error:', err);
+          alert(err.message || 'Failed to delete items.');
+        });
+    }
+  };
+  
   
   const generateRecipe = async () => {
     const safeFoods = selectedFoods.filter((food) => food.is_safe);
@@ -143,13 +151,6 @@ export default function Diet() {
     }
   };
 
-  const saveRecipe = (recipe) => {
-    // Save recipe to local storage or backend
-    const updatedRecipes = [...recipes, recipe];
-    setRecipes(updatedRecipes);
-    localStorage.setItem('recipes', JSON.stringify(updatedRecipes));
-  };
-
   useEffect(() => {
     // Load recipes from local storage on component mount
     const savedRecipes = JSON.parse(localStorage.getItem('recipes')) || [];
@@ -182,10 +183,13 @@ export default function Diet() {
     ? 'http://localhost:5001/api/diet' // Development URL
     : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
 
+    // Add userId to the newFood object before sending
+    const foodWithUserId = { ...newFood, user_id: userId };
+    console.log('New Food: ', newFood, 'User Id: ', userId);
     fetch(baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newFood),
+      body: JSON.stringify(foodWithUserId),
     })
       .then((res) => res.json())
       .then((newItem) => {
@@ -241,28 +245,13 @@ export default function Diet() {
         <button onClick={generateRecipe}>Generate Recipe</button>
       </div>
       {/* Delete Food Record */}
-      <button
+      <button style={{ marginTop: '5px' }}
         onClick={handleDelete}
         disabled={selectedFoods.length === 0} // Disable if no items selected
       >
         Delete Selected Items
       </button>
 
-      {/* Saved Recipes */}
-      <div>
-        <h2>Saved Recipes</h2>
-        {recipes.map((recipe) => (
-          <div key={recipe.id}>
-            <h3>Recipe #{recipe.id}</h3>
-            <ul>
-              {recipe.items.map((item) => (
-                <li key={item.id}>{item.food_name}</li>
-              ))}
-            </ul>
-            <button onClick={() => saveRecipe(recipe)}>Save Recipe</button>
-          </div>
-        ))}
-      </div>
       {/* Modal */}
     {isModalOpen && (
       <div className="modal">

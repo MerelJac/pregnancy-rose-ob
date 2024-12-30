@@ -4,8 +4,6 @@ const cors = require('cors');
 const path = require('path');
 const { generateCompletion } = require("./openai");
 
-
-
 const { getDbConfig } = require('./dbConfig');
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
@@ -44,7 +42,8 @@ db.connect((err) => {
       id INT AUTO_INCREMENT PRIMARY KEY,
       food_name VARCHAR(255) NOT NULL,
       is_safe BOOLEAN NOT NULL,
-      cite_sources TEXT NULL
+      cite_sources TEXT NULL,
+      user_id TEXT NOT NULL
     )
   `;
 
@@ -58,21 +57,31 @@ db.connect((err) => {
 });
 
 // API Routes
-app.get('/api/diet', (req, res) => {
-  console.log('GET /api/diet hit');
-  db.query('SELECT * FROM diet', (err, results) => {
+app.post('/get/diet', (req, res) => {
+  const { userId } = req.body; // Extract userId from the request body
+
+  console.log('GET /get/diet hit for userId: ', userId);
+
+  const query = `
+    SELECT * FROM diet
+    WHERE user_id = ? OR user_id = 'admin1234'
+  `;
+
+  db.query(query, [userId], (err, results) => {
     if (err) {
-      res.status(500).send(err); // Send error if query fails
+      console.error('Database query error:', err);
+      res.status(500).send('Error fetching data.');
     } else {
-      res.json(results); // Send query results as JSON
+      res.status(200).json(results); // Send query results as JSON
     }
   });
 });
 
+
 app.post('/api/diet', (req, res) => {
   console.log('POST /api/diet hit');
 
-  const { food_name, is_safe, cite_sources } = req.body; // Destructure the request body
+  const { food_name, is_safe, cite_sources, user_id } = req.body; // Destructure the request body
 
   // Validate required fields
   if (!food_name || is_safe === undefined) {
@@ -81,12 +90,12 @@ app.post('/api/diet', (req, res) => {
 
   // SQL query to insert the new food item
   const query = `
-    INSERT INTO diet (food_name, is_safe, cite_sources)
-    VALUES (?, ?, ?)
+    INSERT INTO diet (food_name, is_safe, cite_sources, user_id)
+    VALUES (?, ?, ?, ?)
   `;
 
   // If cite_sources is not provided, insert NULL instead
-  const values = [food_name, is_safe, cite_sources || null];
+  const values = [food_name, is_safe, cite_sources || null, user_id];
 
   // Execute the query
   db.query(query, values, (err, results) => {
@@ -98,7 +107,7 @@ app.post('/api/diet', (req, res) => {
     console.log('Food item added successfully:', results);
 
     // Send the inserted food item back with its new ID
-    const newFood = { id: results.insertId, food_name, is_safe, cite_sources: cite_sources || null };
+    const newFood = { id: results.insertId, food_name, is_safe, cite_sources: cite_sources || null, user: user_id };
     res.status(201).json(newFood);
   });
 });
@@ -116,20 +125,23 @@ app.post("/api/generate-recipe", async (req, res) => {
 });
 
 app.delete('/api/diet', (req, res) => {
-  const { ids } = req.body; // Array of IDs to delete
-  console.log('Ids for deleting: ', ids)
-  if (!ids || !Array.isArray(ids)) {
-    return res.status(400).send('Invalid request body');
+  const { ids, userId } = req.body; // Array of IDs to delete
+
+  console.log('Ids for deleting: ', ids, 'UserId: ', userId);
+
+  if (!ids || !Array.isArray(ids) || !userId) {
+    return res.status(400).json({ error: 'Invalid request body or missing userId' });
   }
 
-  const query = 'DELETE FROM diet WHERE id IN (?)';
-  db.query(query, [ids], (err, results) => {
+  const query = 'DELETE FROM diet WHERE id IN (?) AND user_id = ?';
+
+  db.query(query, [ids, userId], (err, results) => {
     if (err) {
       console.error('Database delete error:', err);
-      return res.status(500).send('Failed to delete items');
+      return res.status(500).json({ error: 'Failed to delete items' });
     }
 
-    res.status(200).send({ deletedCount: results.affectedRows });
+    res.status(200).json({ deletedCount: results.affectedRows });
   });
 });
 
