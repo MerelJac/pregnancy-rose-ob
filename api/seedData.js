@@ -48,24 +48,24 @@ const seedFoods = [
 
 // MIRGATION DATA
 // You will need to drop this, then modify it bc this line is going to prod
-        const checkAndAddColumn = `
-          ALTER TABLE recipe ADD COLUMN name VARCHAR(255) NULL;
-        `;
+        // const checkAndAddColumn = `
+        //   ALTER TABLE recipe ADD COLUMN name VARCHAR(255) NULL;
+        // `;
 
-        // Execute query
-        db.query(checkAndAddColumn, (err) => {
-          if (err) {
-            // If the error code indicates the column already exists, log a message
-            if (err.code === 'ER_DUP_FIELDNAME') {
-              console.log('Column "name" already exists in "recipe" table.');
-            } else {
-              console.error('Error adding column "name":', err);
-              process.exit(1); // Exit on other errors
-            }
-          } else {
-            console.log('Column "name" successfully added.');
-          }
-        });
+        // // Execute query
+        // db.query(checkAndAddColumn, (err) => {
+        //   if (err) {
+        //     // If the error code indicates the column already exists, log a message
+        //     if (err.code === 'ER_DUP_FIELDNAME') {
+        //       console.log('Column "name" already exists in "recipe" table.');
+        //     } else {
+        //       console.error('Error adding column "name":', err);
+        //       process.exit(1); // Exit on other errors
+        //     }
+        //   } else {
+        //     console.log('Column "name" successfully added.');
+        //   }
+        // });
 
 // Function to seed the database and prevent duplicates
 const seedDatabase = () => {
@@ -75,6 +75,7 @@ const seedDatabase = () => {
     const createRecipeTableQuery = `
       CREATE TABLE IF NOT EXISTS recipe (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NULL,
         ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
         instructions TEXT NULL,    -- Store recipe instructions
         user_id TEXT NOT NULL      -- Link to the user who created the recipe
