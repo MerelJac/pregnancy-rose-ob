@@ -67,55 +67,53 @@ const seedFoods = [
         //   }
         // });
 
-// Function to seed the database and prevent duplicates
+// Function to seed the database
 const seedDatabase = () => {
-
-
-    // Create 'recipe' table if it doesn't exist
-    const createRecipeTableQuery = `
-      CREATE TABLE IF NOT EXISTS recipe (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NULL,
-        ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
-        instructions TEXT NULL,    -- Store recipe instructions
-        user_id TEXT NOT NULL      -- Link to the user who created the recipe
-      )
-    `;
+  // Create `recipe` table
+  const createRecipeTableQuery = `
+    CREATE TABLE IF NOT EXISTS recipe (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NULL,
+      ingredients JSON NOT NULL,
+      instructions TEXT NULL,
+      user_id TEXT NOT NULL
+    );
+  `;
 
   db.query(createRecipeTableQuery, (err) => {
     if (err) {
       console.error('Error creating recipe table:', err);
-    } else {
-      console.log('Recipe table is ready.');
+      process.exit(1);
     }
+    console.log('Recipe table is ready.');
   });
 
-  const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS diet (
+  // Create `diet` table
+  const createDietTableQuery = `
+    CREATE TABLE IF NOT EXISTS diet (
       id INT AUTO_INCREMENT PRIMARY KEY,
       food_name VARCHAR(255) NOT NULL,
       is_safe BOOLEAN NOT NULL,
       cite_sources TEXT NULL,
       user_id TEXT NOT NULL,
-      UNIQUE KEY unique_food_user (food_name, user_id) -- Composite unique key
+      UNIQUE KEY unique_food_user (food_name, user_id)
     );
   `;
 
-  db.query(createTableQuery, (err) => {
+  db.query(createDietTableQuery, (err) => {
     if (err) {
       console.error('Error creating diet table:', err);
-      db.end();
       process.exit(1);
     }
     console.log('Diet table created or already exists.');
 
-    // Insert seed data
+    // Insert seed data into `diet` table
     const insertQuery = `
       INSERT INTO diet (food_name, is_safe, cite_sources, user_id)
       VALUES (?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-      is_safe=VALUES(is_safe),
-      cite_sources=VALUES(cite_sources);
+      is_safe = VALUES(is_safe),
+      cite_sources = VALUES(cite_sources);
     `;
 
     seedFoods.forEach((food) => {
@@ -132,10 +130,13 @@ const seedDatabase = () => {
       );
     });
 
-
-    // Close connection
-    db.end(() => {
-      console.log('Database connection closed.');
+    // Close the database connection after all queries
+    db.end((err) => {
+      if (err) {
+        console.error('Error closing database connection:', err);
+      } else {
+        console.log('Database connection closed.');
+      }
     });
   });
 };
