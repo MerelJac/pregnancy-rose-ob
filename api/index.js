@@ -5,6 +5,7 @@ const path = require('path');
 const { generateCompletion } = require("./openai");
 
 const { getDbConfig } = require('./dbConfig');
+const { getRecipeContent } = require('./recipeName');
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -62,7 +63,8 @@ db.connect((err) => {
         name VARCHAR(255) NULL,
         ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
         instructions TEXT NULL,    -- Store recipe instructions
-        user_id TEXT NOT NULL      -- Link to the user who created the recipe
+        user_id TEXT NOT NULL,     -- Link to the user who created the recipe
+        notes TEXT NOT NULL
       )
     `;
 
@@ -131,8 +133,6 @@ app.get('/api/recipes/:id', async (req, res) => {
   }
 });
 
-
-
 app.post('/api/diet', (req, res) => {
   console.log('POST /api/diet hit');
 
@@ -178,16 +178,37 @@ app.post("/api/generate-recipe", async (req, res) => {
   try {
     const recipeContent = await generateCompletion(ingredients);
 
-    // Save to the database
+    // Use the helper function to parse the recipe content
+    const parsedContent = getRecipeContent(recipeContent);
+
+    // Validate if required fields are parsed successfully
+    if (!parsedContent.name || !parsedContent.ingredients || !parsedContent.instructions) {
+      throw new Error("Incomplete recipe content parsed.");
+    }
+
+    // Convert ingredients string to a JSON array
+    const ingredientsArray = parsedContent.ingredients
+      .split('\n') // Split by newlines
+      .filter((line) => line.trim() !== "") // Remove empty lines
+      .map((item) => item.replace(/^- /, "").trim()); // Remove leading '- ' and trim
+
     const insertQuery = `
-      INSERT INTO recipe (ingredients, instructions, user_id)
-      VALUES (?, ?, ?)
+      INSERT INTO recipe (name, ingredients, instructions, notes, user_id)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-    // FAKES USERID
+    // Faking user ID for now
+    const userId = 'admin1234';
+
     db.query(
       insertQuery,
-      [JSON.stringify(ingredients), recipeContent, 'admin1234'],
+      [
+        parsedContent.name,
+        JSON.stringify(ingredientsArray), // Ensure this is valid JSON
+        parsedContent.instructions,
+        parsedContent.notes || '', // Default to empty if notes are null
+        userId
+      ],
       (err, result) => {
         if (err) {
           console.error("Database insert error:", err);
@@ -198,8 +219,10 @@ app.post("/api/generate-recipe", async (req, res) => {
           success: true,
           recipe: {
             id: result.insertId,
-            ingredients,
-            instructions: recipeContent,
+            name: parsedContent.name,
+            ingredients: ingredientsArray,
+            instructions: parsedContent.instructions,
+            notes: parsedContent.notes
           },
         });
       }
@@ -210,9 +233,10 @@ app.post("/api/generate-recipe", async (req, res) => {
   }
 });
 
+
 // Fetch saved recipes
 app.get("/api/recipes", (req, res) => {
-  const query = "SELECT id, ingredients, instructions FROM recipe";
+  const query = "SELECT id, ingredients, instructions, name, notes FROM recipe";
 
   db.query(query, (err, results) => {
     if (err) {
@@ -224,7 +248,8 @@ app.get("/api/recipes", (req, res) => {
       id: row.id,
       ingredients: JSON.parse(row.ingredients),
       instructions: row.instructions,
-
+      name: row.name,
+      notes: row.notes
     }));
 
     res.json({ success: true, recipes });

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import isDevelopmentEnv from '../functions/getUrl';
 import {getUserId } from '../functions/getUUID';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 export default function Diet() {
   const [foods, setFoods] = useState([]); // All foods
@@ -9,9 +10,12 @@ export default function Diet() {
   const [searchTerm, setSearchTerm] = useState(''); // Search term
   const [filteredFoods, setFilteredFoods] = useState([]); // Filtered foods
   const [selectedFoods, setSelectedFoods] = useState([]); // Foods selected for recipe
+  const [loading, setLoading] = useState(false); // Loading state
   const [recipes, setRecipes] = useState([]); // Saved recipes
   const [env, setEnv] = useState(false); // Tracks if in development environment
   const [userId, setUserId] = useState(''); // User ID
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
     const isDev = isDevelopmentEnv(); // Call the function
@@ -27,7 +31,6 @@ export default function Diet() {
     ? 'http://localhost:5001/get/diet' // Development URL
     : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/get/diet'; // Production URL
     const userIdPayload = { userId }; // Wrap userId in an object
-
     fetch(baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -131,16 +134,19 @@ export default function Diet() {
         },
         body: JSON.stringify({ ingredients }),
       });
-  
+      setLoading(true); // Start loading
       const data = await response.json();
   
       if (data.success) {
         setRecipes((prevRecipes) => [...prevRecipes, data.recipe]); // Add new recipe
+        navigate('/recipes'); // Redirect to the recipes page
       } else {
         alert(data.error || "Failed to generate recipe.");
       }
     } catch (error) {
       console.error("Error generating recipe:", error);
+    } finally {
+      setLoading(false); // End loading
     }
   };  
 
@@ -233,9 +239,11 @@ export default function Diet() {
         )}
       </div>
 
-      {/* Recipe Actions */}
-      <div>
-        <button style={{ marginTop: '5px' }} onClick={generateRecipe}>Generate Recipe</button>
+    {/* Recipe Actions */}
+    <div>
+        <button style={{ marginTop: "5px" }} onClick={generateRecipe} disabled={loading}>
+          {loading ? "Generating Recipe..." : "Generate Recipe"}
+        </button>
       </div>
       {/* Delete Food Record */}
       <button style={{ marginTop: '5px' }}

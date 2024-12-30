@@ -43,7 +43,7 @@ function Recipes() {
           <div key={recipe.id} className="recipe-card">
             <h3 className="recipe-title">
               <Link to={`/recipes/${recipe.id}`} className="recipe-link">
-                {recipe.name || `Recipe #${recipe.id}`}
+                {recipe.name}
               </Link>
             </h3>
           </div>

@@ -46,27 +46,6 @@ const seedFoods = [
   { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
-// MIRGATION DATA
-// You will need to drop this, then modify it bc this line is going to prod
-        // const checkAndAddColumn = `
-        //   ALTER TABLE recipe ADD COLUMN name VARCHAR(255) NULL;
-        // `;
-
-        // // Execute query
-        // db.query(checkAndAddColumn, (err) => {
-        //   if (err) {
-        //     // If the error code indicates the column already exists, log a message
-        //     if (err.code === 'ER_DUP_FIELDNAME') {
-        //       console.log('Column "name" already exists in "recipe" table.');
-        //     } else {
-        //       console.error('Error adding column "name":', err);
-        //       process.exit(1); // Exit on other errors
-        //     }
-        //   } else {
-        //     console.log('Column "name" successfully added.');
-        //   }
-        // });
-
 // Function to seed the database
 const seedDatabase = () => {
   // Create `recipe` table
@@ -76,9 +55,31 @@ const seedDatabase = () => {
       name VARCHAR(255) NULL,
       ingredients JSON NOT NULL,
       instructions TEXT NULL,
-      user_id TEXT NOT NULL
+      user_id TEXT NOT NULL,
+      notes TEXT NOT NULL
     );
   `;
+
+  // MIRGATION DATA
+// You will need to drop this, then modify it bc this line is going to prod
+const checkAndAddColumn = `
+  ALTER TABLE recipe MODIFY COLUMN notes TEXT NULL;
+`;
+
+// Execute query
+db.query(checkAndAddColumn, (err) => {
+if (err) {
+  // If the error code indicates the column already exists, log a message
+  if (err.code === 'ER_DUP_FIELDNAME') {
+    console.log('Column "notes" already exists in "recipe" table.');
+  } else {
+    console.error('Error adding column "notes":', err);
+    process.exit(1); // Exit on other errors
+  }
+} else {
+  console.log('Column "notes" successfully added.');
+}
+});
 
   db.query(createRecipeTableQuery, (err) => {
     if (err) {
