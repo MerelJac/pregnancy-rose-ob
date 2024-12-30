@@ -83,7 +83,7 @@ const seedDatabase = async () => {
         name VARCHAR(255) NULL,
         ingredients JSON NOT NULL,
         instructions TEXT NULL,
-        user_id TEXT NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
         notes TEXT NOT NULL
       );
     `;
@@ -102,7 +102,7 @@ const seedDatabase = async () => {
         food_name VARCHAR(255) NOT NULL,
         is_safe BOOLEAN NOT NULL,
         cite_sources TEXT NULL,
-        user_id TEXT NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
         UNIQUE KEY unique_food_user (food_name, user_id)
       );
     `;
