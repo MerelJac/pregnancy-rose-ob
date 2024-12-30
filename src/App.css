@@ -79,6 +79,10 @@
   list-style: none;
   text-align: start;
 }
+
+.recipe-style {
+  text-align: start;
+}
 .no-link {
   text-decoration: none;
 }

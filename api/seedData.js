@@ -46,67 +46,73 @@ const seedFoods = [
   { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
-// Function to seed the database
-const seedDatabase = () => {
-  // Create `recipe` table
-  const createRecipeTableQuery = `
-    CREATE TABLE IF NOT EXISTS recipe (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NULL,
-      ingredients JSON NOT NULL,
-      instructions TEXT NULL,
-      user_id TEXT NOT NULL,
-      notes TEXT NOT NULL
-    );
-  `;
+// MIRGATION DATA
+// const checkAndAddColumn = `
+//   ALTER TABLE recipe MODIFY COLUMN notes TEXT NULL;
+// `;
 
-  // MIRGATION DATA
-// You will need to drop this, then modify it bc this line is going to prod
-const checkAndAddColumn = `
-  ALTER TABLE recipe MODIFY COLUMN notes TEXT NULL;
-`;
+// Function to drop all tables
+const dropTables = () => {
+  const dropDietTable = 'DROP TABLE IF EXISTS diet;';
+  const dropRecipeTable = 'DROP TABLE IF EXISTS recipe;';
 
-// Execute query
-db.query(checkAndAddColumn, (err) => {
-if (err) {
-  // If the error code indicates the column already exists, log a message
-  if (err.code === 'ER_DUP_FIELDNAME') {
-    console.log('Column "notes" already exists in "recipe" table.');
-  } else {
-    console.error('Error adding column "notes":', err);
-    process.exit(1); // Exit on other errors
-  }
-} else {
-  console.log('Column "notes" successfully added.');
-}
-});
+  return new Promise((resolve, reject) => {
+    db.query(dropDietTable, (err) => {
+      if (err) return reject(err);
+      console.log('Diet table dropped.');
 
-  db.query(createRecipeTableQuery, (err) => {
-    if (err) {
-      console.error('Error creating recipe table:', err);
-      process.exit(1);
-    }
-    console.log('Recipe table is ready.');
+      db.query(dropRecipeTable, (err) => {
+        if (err) return reject(err);
+        console.log('Recipe table dropped.');
+        resolve();
+      });
+    });
   });
+};
 
-  // Create `diet` table
-  const createDietTableQuery = `
-    CREATE TABLE IF NOT EXISTS diet (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      food_name VARCHAR(255) NOT NULL,
-      is_safe BOOLEAN NOT NULL,
-      cite_sources TEXT NULL,
-      user_id TEXT NOT NULL,
-      UNIQUE KEY unique_food_user (food_name, user_id)
-    );
-  `;
+// Function to seed the database
+const seedDatabase = async () => {
+  try {
+    // Drop existing tables
+    await dropTables();
 
-  db.query(createDietTableQuery, (err) => {
-    if (err) {
-      console.error('Error creating diet table:', err);
-      process.exit(1);
-    }
-    console.log('Diet table created or already exists.');
+    // Create `recipe` table
+    const createRecipeTableQuery = `
+      CREATE TABLE IF NOT EXISTS recipe (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NULL,
+        ingredients JSON NOT NULL,
+        instructions TEXT NULL,
+        user_id TEXT NOT NULL,
+        notes TEXT NOT NULL
+      );
+    `;
+    await new Promise((resolve, reject) => {
+      db.query(createRecipeTableQuery, (err) => {
+        if (err) return reject(err);
+        console.log('Recipe table created.');
+        resolve();
+      });
+    });
+
+    // Create `diet` table
+    const createDietTableQuery = `
+      CREATE TABLE IF NOT EXISTS diet (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        food_name VARCHAR(255) NOT NULL,
+        is_safe BOOLEAN NOT NULL,
+        cite_sources TEXT NULL,
+        user_id TEXT NOT NULL,
+        UNIQUE KEY unique_food_user (food_name, user_id)
+      );
+    `;
+    await new Promise((resolve, reject) => {
+      db.query(createDietTableQuery, (err) => {
+        if (err) return reject(err);
+        console.log('Diet table created.');
+        resolve();
+      });
+    });
 
     // Insert seed data into `diet` table
     const insertQuery = `
@@ -116,30 +122,29 @@ if (err) {
       is_safe = VALUES(is_safe),
       cite_sources = VALUES(cite_sources);
     `;
-
-    seedFoods.forEach((food) => {
-      db.query(
-        insertQuery,
-        [food.food_name, food.is_safe, food.cite_sources || null, food.user_id],
-        (err) => {
-          if (err) {
-            console.error('Error inserting seed data:', err);
-          } else {
+    for (const food of seedFoods) {
+      await new Promise((resolve, reject) => {
+        db.query(
+          insertQuery,
+          [food.food_name, food.is_safe, food.cite_sources || null, food.user_id],
+          (err) => {
+            if (err) return reject(err);
             console.log(`Seeded food: ${food.food_name}`);
+            resolve();
           }
-        }
-      );
-    });
+        );
+      });
+    }
 
-    // Close the database connection after all queries
+    console.log('Seeding complete.');
+  } catch (error) {
+    console.error('Error during seeding:', error);
+  } finally {
     db.end((err) => {
-      if (err) {
-        console.error('Error closing database connection:', err);
-      } else {
-        console.log('Database connection closed.');
-      }
+      if (err) console.error('Error closing database connection:', err);
+      else console.log('Database connection closed.');
     });
-  });
+  }
 };
 
 // Seed the database

@@ -20,7 +20,11 @@ const generateCompletion = async (ingredients) => {
             role: "user",
             content: `Create a pregnancy-safe recipe using the following ingredients: ${ingredients.join(
               ", "
-            )}. Provide a step-by-step instruction and ingredients.`,
+            )}. Provide the response strictly in the following format:
+        recipe:
+        ingredients:
+        instructions:
+        notes:`,
           },
         ],
         temperature: 0.7,

@@ -45,12 +45,23 @@ function RecipeDetail() {
     <div className="recipe-detail">
       <h2>{recipe.name}</h2>
       <h3>Ingredients:</h3>
-      <ul>
-        {recipe.ingredients}
+      <ul className='recipe-style'>
+        {JSON.parse(recipe.ingredients).map((ingredient, index) => (
+          <li key={index}>{ingredient}</li>
+        ))}
       </ul>
       <h3>Instructions:</h3>
-      <p>{recipe.instructions}</p>
+      <ol className='recipe-style'>
+  {recipe.instructions.split(/\n|\d+\.\s/).filter(Boolean).map((step, index) => (
+    <li key={index}>{step.trim()}</li>
+  ))}
+</ol>
+
+      <h3>Notes:</h3>
+      <p >{recipe.notes}</p>
+
     </div>
+
   );
 }
 
