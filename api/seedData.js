@@ -46,30 +46,49 @@ const seedFoods = [
   { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
-const checkAndAddColumn = `
-  ALTER TABLE diet 
-  ADD COLUMN user_id TEXT NOT NULL;
-`;
+// MIRGATION DATA
+        const checkAndAddColumn = `
+          ALTER TABLE diet 
+          ADD COLUMN user_id TEXT NOT NULL;
+        `;
 
-// Execute query
-db.query(checkAndAddColumn, (err) => {
-  if (err) {
-    // If the error code indicates the column already exists, log a message
-    if (err.code === 'ER_DUP_FIELDNAME') {
-      console.log('Column "user_id" already exists in "diet" table.');
-    } else {
-      console.error('Error adding column "user_id":', err);
-      process.exit(1); // Exit on other errors
-    }
-  } else {
-    console.log('Column "user_id" successfully added.');
-  }
-});
-
-
+        // Execute query
+        db.query(checkAndAddColumn, (err) => {
+          if (err) {
+            // If the error code indicates the column already exists, log a message
+            if (err.code === 'ER_DUP_FIELDNAME') {
+              console.log('Column "user_id" already exists in "diet" table.');
+            } else {
+              console.error('Error adding column "user_id":', err);
+              process.exit(1); // Exit on other errors
+            }
+          } else {
+            console.log('Column "user_id" successfully added.');
+          }
+        });
 
 // Function to seed the database and prevent duplicates
 const seedDatabase = () => {
+
+
+    // Create 'recipe' table if it doesn't exist
+    const createRecipeTableQuery = `
+      CREATE TABLE IF NOT EXISTS recipe (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
+        instructions TEXT NULL,    -- Store recipe instructions
+        user_id TEXT NOT NULL      -- Link to the user who created the recipe
+      )
+    `;
+
+  db.query(createRecipeTableQuery, (err) => {
+    if (err) {
+      console.error('Error creating recipe table:', err);
+    } else {
+      console.log('Recipe table is ready.');
+    }
+  });
+
   const createTableQuery = `
       CREATE TABLE IF NOT EXISTS diet (
       id INT AUTO_INCREMENT PRIMARY KEY,

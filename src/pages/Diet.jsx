@@ -120,10 +120,9 @@ export default function Diet() {
     const ingredients = safeFoods.map((food) => food.food_name);
   
     const baseUrl = env
-    ? 'http://localhost:5001/api/diet' // Development URL
-    : 'https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/diet'; // Production URL
-
-
+      ? "http://localhost:5001/api/generate-recipe"
+      : "https://pregnancy-rose-ob-4397011a5a44.herokuapp.com/api/generate-recipe";
+  
     try {
       const response = await fetch(baseUrl, {
         method: "POST",
@@ -136,20 +135,14 @@ export default function Diet() {
       const data = await response.json();
   
       if (data.success) {
-        const newRecipe = {
-          id: Date.now(),
-          items: safeFoods,
-          instructions: data.recipe,
-        };
-  
-        setRecipes([...recipes, newRecipe]);
+        setRecipes((prevRecipes) => [...prevRecipes, data.recipe]); // Add new recipe
       } else {
         alert(data.error || "Failed to generate recipe.");
       }
     } catch (error) {
       console.error("Error generating recipe:", error);
     }
-  };
+  };  
 
   useEffect(() => {
     // Load recipes from local storage on component mount

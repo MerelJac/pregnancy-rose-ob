@@ -59,7 +59,7 @@
   padding-right: 5px;
 }
 .overflow-scroll {
-  max-height: 61vh;
+  max-height: 58vh;
   overflow: scroll;
 }
 

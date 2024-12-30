@@ -54,6 +54,25 @@ db.connect((err) => {
       console.log('Diet table is ready.');
     }
   });
+
+    // Create 'recipe' table if it doesn't exist
+    const createRecipeTableQuery = `
+      CREATE TABLE IF NOT EXISTS recipe (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ingredients JSON NOT NULL, -- Use JSON to store ingredient arrays
+        instructions TEXT NULL,    -- Store recipe instructions
+        user_id TEXT NOT NULL      -- Link to the user who created the recipe
+      )
+    `;
+
+  db.query(createRecipeTableQuery, (err) => {
+    if (err) {
+      console.error('Error creating recipe table:', err);
+    } else {
+      console.log('Recipe table is ready.');
+    }
+  });
+
 });
 
 // API Routes
@@ -116,13 +135,66 @@ app.post('/api/diet', (req, res) => {
 app.post("/api/generate-recipe", async (req, res) => {
   const { ingredients } = req.body;
 
+  if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+    return res.status(400).json({ success: false, error: "Invalid ingredients" });
+  }
+
   try {
-    const recipe = await generateCompletion(ingredients);
-    res.json({ success: true, recipe });
+    const recipeContent = await generateCompletion(ingredients);
+
+    // Save to the database
+    const insertQuery = `
+      INSERT INTO recipe (ingredients, instructions, user_id)
+      VALUES (?, ?, ?)
+    `;
+
+    // FAKES USERID
+    db.query(
+      insertQuery,
+      [JSON.stringify(ingredients), recipeContent, 'admin1234'],
+      (err, result) => {
+        if (err) {
+          console.error("Database insert error:", err);
+          return res.status(500).json({ success: false, error: "Failed to save recipe" });
+        }
+
+        res.json({
+          success: true,
+          recipe: {
+            id: result.insertId,
+            ingredients,
+            instructions: recipeContent,
+          },
+        });
+      }
+    );
   } catch (error) {
+    console.error("Error generating recipe:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Fetch saved recipes
+app.get("/api/recipes", (req, res) => {
+  const query = "SELECT id, ingredients, instructions FROM recipe";
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Database fetch error:", err);
+      return res.status(500).json({ success: false, error: "Failed to fetch recipes" });
+    }
+
+    const recipes = results.map((row) => ({
+      id: row.id,
+      ingredients: JSON.parse(row.ingredients),
+      instructions: row.instructions,
+
+    }));
+
+    res.json({ success: true, recipes });
+  });
+});
+
 
 app.delete('/api/diet', (req, res) => {
   const { ids, userId } = req.body; // Array of IDs to delete
