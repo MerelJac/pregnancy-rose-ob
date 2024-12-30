@@ -46,17 +46,26 @@ const seedFoods = [
   { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
-const updateTableSchema = `
-  ALTER TABLE diet ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'admin1234';
+const checkAndAddColumn = `
+  ALTER TABLE diet 
+  ADD COLUMN user_id TEXT NOT NULL DEFAULT 'admin1234';
 `;
 
-db.query(updateTableSchema, (err) => {
+// Execute query
+db.query(checkAndAddColumn, (err) => {
   if (err) {
-    console.error('Error updating table schema:', err);
-    process.exit(1);
+    // If the error code indicates the column already exists, log a message
+    if (err.code === 'ER_DUP_FIELDNAME') {
+      console.log('Column "user_id" already exists in "diet" table.');
+    } else {
+      console.error('Error adding column "user_id":', err);
+      process.exit(1); // Exit on other errors
+    }
+  } else {
+    console.log('Column "user_id" successfully added.');
   }
-  console.log('Table schema updated.');
 });
+
 
 
 // Function to seed the database and prevent duplicates
