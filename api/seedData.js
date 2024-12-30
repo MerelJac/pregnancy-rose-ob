@@ -47,8 +47,9 @@ const seedFoods = [
 ];
 
 // MIRGATION DATA
+// You will need to drop this, then modify it bc this line is going to prod
         const checkAndAddColumn = `
-          ALTER TABLE recipe MODIFY COLUMN name VARCHAR(255) NULL;
+          ALTER TABLE recipe ADD COLUMN name VARCHAR(255) NULL;
         `;
 
         // Execute query

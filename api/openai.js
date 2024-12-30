@@ -1,37 +1,46 @@
-const OpenAI = require("openai");
-const dotenv = require("dotenv");
-
-dotenv.config();
-
-const openai = new OpenAI({
-  apiKey: 'My API Key',
-});
-
-console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
-console.log("NODE_ENV:", process.env.NODE_ENV);
-
+const axios = require("axios");
+require("dotenv").config();
 
 const generateCompletion = async (ingredients) => {
-  if (!ingredients || ingredients.length === 0) {
-    throw new Error("No ingredients provided.");
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Missing OpenAI API key.");
   }
+  console.log('Triggering with ingredients: ', ingredients)
 
-  const prompt = `Create a pregnancy-safe recipe using the following ingredients: ${ingredients.join(
-    ", "
-  )}. Provide a step-by-step instruction.`;
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful chef assistant." },
+          {
+            role: "user",
+            content: `Create a pregnancy-safe recipe using the following ingredients: ${ingredients.join(
+              ", "
+            )}. Provide a step-by-step instruction and ingredients.`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+      }
+    );
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo", // Or "gpt-4o-mini"
-    messages: [
-      { role: "system", content: "You are a helpful chef assistant." },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: 150, // Adjust as needed
-  });
-  
-  
-
-  return completion.choices[0].message.content.trim();
+    const recipe = response.data.choices[0].message.content.trim();
+    console.log("Generated Recipe in generateCompletion:", recipe);
+    return recipe;
+  } catch (error) {
+    console.error("API Error:", error.response?.data || error.message);
+    throw new Error("Failed to generate recipe");
+  }
 };
 
 module.exports = { generateCompletion };

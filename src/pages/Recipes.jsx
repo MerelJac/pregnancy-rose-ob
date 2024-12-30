@@ -1,33 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import isDevelopmentEnv from '../functions/getUrl';
 import { getUserId } from '../functions/getUUID';
 
 function Recipes() {
-  const [recipes, setRecipes] = useState([]); // Saved recipes
-  const [env, setEnv] = useState(false); // Tracks if in development environment
-  const [userId, setUserId] = useState(''); // User ID
-
-  const saveRecipe = (recipe) => {
-    // Save recipe to local storage or backend
-    const updatedRecipes = [...recipes, recipe];
-    setRecipes(updatedRecipes);
-    localStorage.setItem('recipes', JSON.stringify(updatedRecipes));
-  };
+  const [recipes, setRecipes] = useState([]);
+  const [env, setEnv] = useState(false);
+  const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    // Load recipes from local storage on component mount
-    const savedRecipes = JSON.parse(localStorage.getItem('recipes')) || [];
-    setRecipes(savedRecipes);
-  }, []);
+    const isDev = isDevelopmentEnv();
+    setEnv(isDev);
 
-  useEffect(() => {
-    const isDev = isDevelopmentEnv(); // Call the function
-    setEnv(isDev); // Set the environment state
-
-    const id = getUserId(); // Fetch or generate userId
-    setUserId(id); // Save userId in state
+    const id = getUserId();
+    setUserId(id);
     console.log('User ID initialized:', id);
-  }, []); // Only runs on component mount
+  }, []);
 
   useEffect(() => {
     const baseUrl = env
@@ -38,7 +26,6 @@ function Recipes() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          // Sort recipes to display the most recent first
           const sortedRecipes = data.recipes.sort((a, b) => new Date(b.date) - new Date(a.date));
           setRecipes(sortedRecipes);
         } else {
@@ -55,15 +42,10 @@ function Recipes() {
         {recipes.map((recipe) => (
           <div key={recipe.id} className="recipe-card">
             <h3 className="recipe-title">
-              <a href={`/recipes/${recipe.id}`} className="recipe-link">
+              <Link to={`/recipes/${recipe.id}`} className="recipe-link">
                 {recipe.name || `Recipe #${recipe.id}`}
-              </a>
+              </Link>
             </h3>
-            <ul className="ingredients-list">
-              {recipe.ingredients.map((ingredient, index) => (
-                <li key={index} className="ingredient-item">{ingredient}</li>
-              ))}
-            </ul>
           </div>
         ))}
       </div>

@@ -97,6 +97,41 @@ app.post('/get/diet', (req, res) => {
   });
 });
 
+// Backend route to get a recipe by ID
+app.get('/api/recipes/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ success: false, error: 'Recipe ID is required' });
+  }
+
+  try {
+    // Query to fetch the recipe by ID
+    const selectQuery = 'SELECT * FROM recipe WHERE id = ?';
+
+    db.query(selectQuery, [id], (err, results) => {
+      if (err) {
+        console.error('Database query error:', err);
+        return res.status(500).json({ success: false, error: 'Database query failed' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ success: false, error: 'Recipe not found' });
+      }
+
+      // Send back the recipe
+      res.json({
+        success: true,
+        recipe: results[0],
+      });
+    });
+  } catch (error) {
+    console.error('Error fetching recipe:', error.message);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
 
 app.post('/api/diet', (req, res) => {
   console.log('POST /api/diet hit');
