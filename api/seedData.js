@@ -43,18 +43,19 @@ const seedFoods = [
   { food_name: 'Cooked eggs with firm yolks and whites', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' },
   { food_name: 'Fish and shellfish cooked to 145°F', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' },
   { food_name: 'Fish lower in mercury (salmon, shrimp, pollock, tilapia, cod, catfish)', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' },
-  { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html' }
+  { food_name: 'Non-alcoholic beverages', is_safe: true, cite_sources: 'https://www.cdc.gov/food-safety/foods/pregnant-people.html', user_id: 'admin1234' }
 ];
 
 // Function to seed the database and prevent duplicates
 const seedDatabase = () => {
   const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS diet (
+      CREATE TABLE IF NOT EXISTS diet (
       id INT AUTO_INCREMENT PRIMARY KEY,
       food_name VARCHAR(255) NOT NULL,
       is_safe BOOLEAN NOT NULL,
       cite_sources TEXT NULL,
-      user_id TEXT NOT NULL
+      user_id TEXT NOT NULL,
+      UNIQUE KEY unique_food_user (food_name, user_id) -- Composite unique key
     );
   `;
 
@@ -70,18 +71,25 @@ const seedDatabase = () => {
     const insertQuery = `
       INSERT INTO diet (food_name, is_safe, cite_sources, user_id)
       VALUES (?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE food_name=VALUES(food_name);
+      ON DUPLICATE KEY UPDATE
+      is_safe=VALUES(is_safe),
+      cite_sources=VALUES(cite_sources);
     `;
 
     seedFoods.forEach((food) => {
-      db.query(insertQuery, [food.food_name, food.is_safe, food.cite_sources], (err) => {
-        if (err) {
-          console.error('Error inserting seed data:', err);
-        } else {
-          console.log(`Seeded food: ${food.food_name}`);
+      db.query(
+        insertQuery,
+        [food.food_name, food.is_safe, food.cite_sources || null, food.user_id],
+        (err) => {
+          if (err) {
+            console.error('Error inserting seed data:', err);
+          } else {
+            console.log(`Seeded food: ${food.food_name}`);
+          }
         }
-      });
+      );
     });
+
 
     // Close connection
     db.end(() => {

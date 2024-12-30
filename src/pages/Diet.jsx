@@ -215,7 +215,7 @@ export default function Diet() {
       </div>
 
       {/* Food Results */}
-      <div>
+      <div className='overflow-scroll'>
         {filteredFoods.length > 0 ? (
           <ul className='left-aligned'>
             {filteredFoods.map((food) => (
@@ -242,7 +242,7 @@ export default function Diet() {
 
       {/* Recipe Actions */}
       <div>
-        <button onClick={generateRecipe}>Generate Recipe</button>
+        <button style={{ marginTop: '5px' }} onClick={generateRecipe}>Generate Recipe</button>
       </div>
       {/* Delete Food Record */}
       <button style={{ marginTop: '5px' }}
